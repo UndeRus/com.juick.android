@@ -18,6 +18,11 @@
 package com.juick.android;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.v4.app.SupportActivity;
 import com.juick.android.api.JuickMessage;
 import android.os.Bundle;
@@ -87,10 +92,22 @@ public class ThreadFragment extends ListFragment implements AdapterView.OnItemCl
         getListView().setOnItemClickListener(this);
         getListView().setOnItemLongClickListener(new JuickMessageMenu(getActivity()));
 
+        ConnectivityManager connManager = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        final NetworkInfo info = connManager.getActiveNetworkInfo();
         Thread thr = new Thread(new Runnable() {
-
+                
             public void run() {
-                final String jsonStr = Utils.getJSON(getActivity(), "http://api.juick.com/thread?mid=" + mid);
+                final String jsonStr;
+                SharedPreferences prefs = getActivity().getSharedPreferences("CACHE", 0);
+                if((info == null)||!info.isAvailable()||!info.isConnected()){
+                    jsonStr = prefs.getString("T" + mid, "[]");
+                } else {
+                    jsonStr = Utils.getJSON(getActivity(), "http://api.juick.com/thread?mid=" + mid);
+                    Editor editor = prefs.edit();
+                    editor.putString("T" + mid, jsonStr);
+                    editor.commit();
+                }
+                
                 if (isAdded()) {
                     getActivity().runOnUiThread(new Runnable() {
 

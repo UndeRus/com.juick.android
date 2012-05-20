@@ -18,10 +18,14 @@
  */
 package com.juick.android;
 
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.net.NetworkInfo;
 import android.widget.AbsListView;
 import com.juick.android.api.JuickMessage;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
@@ -67,6 +71,12 @@ public class MessagesFragment extends ListFragment implements AdapterView.OnItem
     private int mLastMotionY;
     private boolean mBounceHack;
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -164,10 +174,22 @@ public class MessagesFragment extends ListFragment implements AdapterView.OnItem
     }
 
     private void init() {
+        ConnectivityManager connManager = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        final NetworkInfo info = connManager.getActiveNetworkInfo();
+        
         Thread thr = new Thread(new Runnable() {
 
             public void run() {
-                final String jsonStr = Utils.getJSON(getActivity(), apiurl);
+                final String jsonStr;
+                SharedPreferences prefs = getActivity().getSharedPreferences("CACHE", 0);
+                if((info == null)||!info.isAvailable()||!info.isConnected()){
+                    jsonStr = prefs.getString("LAST", "[]");
+                } else {
+                    jsonStr = Utils.getJSON(getActivity(), apiurl);
+                    Editor editor = prefs.edit();
+                    editor.putString("LAST", jsonStr);
+                    editor.commit();
+                }
                 if (isAdded()) {
                     getActivity().runOnUiThread(new Runnable() {
 
