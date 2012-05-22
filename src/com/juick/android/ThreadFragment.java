@@ -43,6 +43,7 @@ public class ThreadFragment extends ListFragment implements AdapterView.OnItemCl
     private JuickMessagesAdapter listAdapter;
     private WsClient ws = null;
     private int mid = 0;
+    private DbHandler db;
 
     @Override
     public void onAttach(SupportActivity activity) {
@@ -87,6 +88,7 @@ public class ThreadFragment extends ListFragment implements AdapterView.OnItemCl
     }
 
     private void initAdapter() {
+        db = new DbHandler(this.getActivity());
         listAdapter = new JuickMessagesAdapter(getActivity(), JuickMessagesAdapter.TYPE_THREAD);
 
         getListView().setOnItemClickListener(this);
@@ -99,13 +101,12 @@ public class ThreadFragment extends ListFragment implements AdapterView.OnItemCl
             public void run() {
                 final String jsonStr;
                 SharedPreferences prefs = getActivity().getSharedPreferences("CACHE", 0);
+                
                 if((info == null)||!info.isAvailable()||!info.isConnected()){
-                    jsonStr = prefs.getString("T" + mid, "[]");
+                    jsonStr = db.getThread(mid);    
                 } else {
                     jsonStr = Utils.getJSON(getActivity(), "http://api.juick.com/thread?mid=" + mid);
-                    Editor editor = prefs.edit();
-                    editor.putString("T" + mid, jsonStr);
-                    editor.commit();
+                    db.upsertThread(mid, jsonStr);
                 }
                 
                 if (isAdded()) {
