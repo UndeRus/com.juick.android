@@ -62,7 +62,6 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
         }
 
         startCheckUpdates(this);
-
         ActionBar bar = getSupportActionBar();
         bar.setDisplayShowHomeEnabled(false);
         bar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
@@ -96,6 +95,8 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
         } else if (itemPosition == 2) {
             args.putBoolean("popular", true);
         } else if (itemPosition == 3) {
+        	args.putBoolean("jugretop", true);
+        } else if (itemPosition == 4) {
             args.putBoolean("media", true);
         }
         mf.setArguments(args);

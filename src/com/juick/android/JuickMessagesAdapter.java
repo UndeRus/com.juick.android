@@ -175,18 +175,24 @@ public class JuickMessagesAdapter extends ArrayAdapter<JuickMessage> {
         ssb.setSpan(new ForegroundColorSpan(0xFF0000CC), paddingt + m.start(), paddingt + m.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         pos = m.end();
         }
-         */
+         */ 
+        String mid = "#" + jmsg.MID;
+        if (jmsg.RID > 0) {
+			mid += "/" + jmsg.RID;
+		}
+        ssb.append("\n" + mid);
 
         DateFormat df = new SimpleDateFormat("HH:mm dd/MMM/yy");
         df.setTimeZone(TimeZone.getDefault());
         String date = df.format(jmsg.Timestamp);
-        ssb.append("\n" + date + " ");
+        ssb.append(" " + date + " ");
 
-        int padding = name.length() + 1 + tags.length() + 1 + txt.length() + 1;
+        int padding = mid.length() + 1 + name.length() + 1 + tags.length() + 1 + txt.length() + 1;
         int end = padding + date.length() + 1;
 
         ssb.setSpan(new ForegroundColorSpan(0xFFAAAAAA), padding, padding + date.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
+        ssb.setSpan(new ForegroundColorSpan(0xFFAAAAAA), padding, padding + date.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        
         if (jmsg.replies > 0) {
             String replies = Replies + jmsg.replies;
             ssb.append("  " + replies + " ");

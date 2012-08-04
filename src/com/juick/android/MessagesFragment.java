@@ -43,399 +43,415 @@ import com.juick.R;
 import java.net.URLEncoder;
 
 /**
- *
+ * 
  * @author Ugnich Anton
  */
-public class MessagesFragment extends ListFragment implements AdapterView.OnItemClickListener, AbsListView.OnScrollListener, View.OnTouchListener, View.OnClickListener {
+public class MessagesFragment extends ListFragment implements
+		AdapterView.OnItemClickListener, AbsListView.OnScrollListener,
+		View.OnTouchListener, View.OnClickListener {
 
-    private JuickMessagesAdapter listAdapter;
-    private View viewLoading;
-    private String apiurl;
-    private boolean loading = true;
-    private int page = 1;
-    // Pull to refresh
-    private static final int TAP_TO_REFRESH = 1;
-    private static final int PULL_TO_REFRESH = 2;
-    private static final int RELEASE_TO_REFRESH = 3;
-    private static final int REFRESHING = 4;
-    private RelativeLayout mRefreshView;
-    private TextView mRefreshViewText;
-    private ImageView mRefreshViewImage;
-    private ProgressBar mRefreshViewProgress;
-    private int mCurrentScrollState;
-    private int mRefreshState;
-    private RotateAnimation mFlipAnimation;
-    private RotateAnimation mReverseFlipAnimation;
-    private int mRefreshViewHeight;
-    private int mRefreshOriginalTopPadding;
-    private int mLastMotionY;
-    private boolean mBounceHack;
+	private JuickMessagesAdapter listAdapter;
+	private View viewLoading;
+	private String apiurl;
+	private boolean loading = true;
+	private int page = 1;
+	// Pull to refresh
+	private static final int TAP_TO_REFRESH = 1;
+	private static final int PULL_TO_REFRESH = 2;
+	private static final int RELEASE_TO_REFRESH = 3;
+	private static final int REFRESHING = 4;
+	private RelativeLayout mRefreshView;
+	private TextView mRefreshViewText;
+	private ImageView mRefreshViewImage;
+	private ProgressBar mRefreshViewProgress;
+	private int mCurrentScrollState;
+	private int mRefreshState;
+	private RotateAnimation mFlipAnimation;
+	private RotateAnimation mReverseFlipAnimation;
+	private int mRefreshViewHeight;
+	private int mRefreshOriginalTopPadding;
+	private int mLastMotionY;
+	private boolean mBounceHack;
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+	}
 
-    
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
 
-        boolean home = false;
-        int uid = 0;
-        String uname = null;
-        String search = null;
-        String tag = null;
-        int place_id = 0;
-        boolean popular = false;
-        boolean media = false;
+		boolean home = false;
+		int uid = 0;
+		String uname = null;
+		String search = null;
+		String tag = null;
+		int place_id = 0;
+		boolean popular = false;
+		boolean media = false;
+		boolean jugretop = false;
 
-        Bundle args = getArguments();
-        if (args != null) {
-            home = args.getBoolean("home", false);
-            uid = args.getInt("uid", 0);
-            uname = args.getString("uname");
-            search = args.getString("search");
-            tag = args.getString("tag");
-            place_id = args.getInt("place_id", 0);
-            popular = args.getBoolean("popular", false);
-            media = args.getBoolean("media", false);
-        }
+		Bundle args = getArguments();
+		if (args != null) {
+			home = args.getBoolean("home", false);
+			uid = args.getInt("uid", 0);
+			uname = args.getString("uname");
+			search = args.getString("search");
+			tag = args.getString("tag");
+			place_id = args.getInt("place_id", 0);
+			popular = args.getBoolean("popular", false);
+			jugretop = args.getBoolean("jugretop", false);
+			media = args.getBoolean("media", false);
+		}
 
-        if (home) {
-            apiurl = "http://api.juick.com/home?1=1";
-        } else {
-            apiurl = "http://api.juick.com/messages?1=1";
-            if (uid > 0 && uname != null) {
-                apiurl += "&user_id=" + uid;
-            } else if (search != null) {
-                try {
-                    apiurl += "&search=" + URLEncoder.encode(search, "utf-8");
-                } catch (Exception e) {
-                    Log.e("ApiURL", e.toString());
-                }
-            } else if (tag != null) {
-                try {
-                    apiurl += "&tag=" + URLEncoder.encode(tag, "utf-8");
-                } catch (Exception e) {
-                    Log.e("ApiURL", e.toString());
-                }
-                if (uid == -1) {
-                    apiurl += "&user_id=-1";
-                }
-            } else if (place_id > 0) {
-                apiurl += "&place_id=" + place_id;
-            } else if (popular) {
-                apiurl += "&popular=1";
-            } else if (media) {
-                apiurl += "&media=all";
-            }
-        }
+		if (home) {
+			apiurl = "http://api.juick.com/home?1=1";
+		} else	if (jugretop) {
+			apiurl = "http://s.jugregator.org/api?";
+		} else {
+			apiurl = "http://api.juick.com/messages?1=1";
+			if (uid > 0 && uname != null) {
+				apiurl += "&user_id=" + uid;
+			} else if (search != null) {
+				try {
+					apiurl += "&search=" + URLEncoder.encode(search, "utf-8");
+				} catch (Exception e) {
+					Log.e("ApiURL", e.toString());
+				}
+			} else if (tag != null) {
+				try {
+					apiurl += "&tag=" + URLEncoder.encode(tag, "utf-8");
+				} catch (Exception e) {
+					Log.e("ApiURL", e.toString());
+				}
+				if (uid == -1) {
+					apiurl += "&user_id=-1";
+				}
+			} else if (place_id > 0) {
+				apiurl += "&place_id=" + place_id;
+			} else if (popular) {
+				apiurl += "&popular=1";
+			} else if (media) {
+				apiurl += "&media=all";
+			}
+		}
 
-        mFlipAnimation = new RotateAnimation(0, -180,
-                RotateAnimation.RELATIVE_TO_SELF, 0.5f,
-                RotateAnimation.RELATIVE_TO_SELF, 0.5f);
-        mFlipAnimation.setInterpolator(new LinearInterpolator());
-        mFlipAnimation.setDuration(250);
-        mFlipAnimation.setFillAfter(true);
-        mReverseFlipAnimation = new RotateAnimation(-180, 0,
-                RotateAnimation.RELATIVE_TO_SELF, 0.5f,
-                RotateAnimation.RELATIVE_TO_SELF, 0.5f);
-        mReverseFlipAnimation.setInterpolator(new LinearInterpolator());
-        mReverseFlipAnimation.setDuration(250);
-        mReverseFlipAnimation.setFillAfter(true);
-    }
+		mFlipAnimation = new RotateAnimation(0, -180,
+				RotateAnimation.RELATIVE_TO_SELF, 0.5f,
+				RotateAnimation.RELATIVE_TO_SELF, 0.5f);
+		mFlipAnimation.setInterpolator(new LinearInterpolator());
+		mFlipAnimation.setDuration(250);
+		mFlipAnimation.setFillAfter(true);
+		mReverseFlipAnimation = new RotateAnimation(-180, 0,
+				RotateAnimation.RELATIVE_TO_SELF, 0.5f,
+				RotateAnimation.RELATIVE_TO_SELF, 0.5f);
+		mReverseFlipAnimation.setInterpolator(new LinearInterpolator());
+		mReverseFlipAnimation.setDuration(250);
+		mReverseFlipAnimation.setFillAfter(true);
+	}
 
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+	@Override
+	public void onViewCreated(View view, Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
 
-        LayoutInflater li = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		LayoutInflater li = (LayoutInflater) getActivity().getSystemService(
+				Context.LAYOUT_INFLATER_SERVICE);
 
-        viewLoading = li.inflate(R.layout.listitem_loading, null);
+		viewLoading = li.inflate(R.layout.listitem_loading, null);
 
-        mRefreshView = (RelativeLayout) li.inflate(R.layout.pull_to_refresh_header, null);
-        mRefreshViewText = (TextView) mRefreshView.findViewById(R.id.pull_to_refresh_text);
-        mRefreshViewImage = (ImageView) mRefreshView.findViewById(R.id.pull_to_refresh_image);
-        mRefreshViewProgress = (ProgressBar) mRefreshView.findViewById(R.id.pull_to_refresh_progress);
-        mRefreshViewImage.setMinimumHeight(50);
-        mRefreshView.setOnClickListener(this);
-        mRefreshOriginalTopPadding = mRefreshView.getPaddingTop();
-        mRefreshState = TAP_TO_REFRESH;
+		mRefreshView = (RelativeLayout) li.inflate(
+				R.layout.pull_to_refresh_header, null);
+		mRefreshViewText = (TextView) mRefreshView
+				.findViewById(R.id.pull_to_refresh_text);
+		mRefreshViewImage = (ImageView) mRefreshView
+				.findViewById(R.id.pull_to_refresh_image);
+		mRefreshViewProgress = (ProgressBar) mRefreshView
+				.findViewById(R.id.pull_to_refresh_progress);
+		mRefreshViewImage.setMinimumHeight(50);
+		mRefreshView.setOnClickListener(this);
+		mRefreshOriginalTopPadding = mRefreshView.getPaddingTop();
+		mRefreshState = TAP_TO_REFRESH;
 
-        getListView().setOnTouchListener(this);
-        getListView().setOnScrollListener(this);
-        getListView().setOnItemClickListener(this);
-        getListView().setOnItemLongClickListener(new JuickMessageMenu(getActivity()));
+		getListView().setOnTouchListener(this);
+		getListView().setOnScrollListener(this);
+		getListView().setOnItemClickListener(this);
+		getListView().setOnItemLongClickListener(
+				new JuickMessageMenu(getActivity()));
 
-        listAdapter = new JuickMessagesAdapter(getActivity(), 0);
+		listAdapter = new JuickMessagesAdapter(getActivity(), 0);
 
-        init();
-    }
+		init();
+	}
 
-    private void init() {
-        ConnectivityManager connManager = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
-        final NetworkInfo info = connManager.getActiveNetworkInfo();
-        
-        Thread thr = new Thread(new Runnable() {
+	private void init() {
+		ConnectivityManager connManager = (ConnectivityManager) getActivity()
+				.getSystemService(Context.CONNECTIVITY_SERVICE);
+		final NetworkInfo info = connManager.getActiveNetworkInfo();
 
-            public void run() {
-                final String jsonStr;
-                SharedPreferences prefs = getActivity().getSharedPreferences("CACHE", 0);
-                if((info == null)||!info.isAvailable()||!info.isConnected()){
-                    jsonStr = prefs.getString("LAST", "[]");
-                } else {
-                    jsonStr = Utils.getJSON(getActivity(), apiurl);
-                    Editor editor = prefs.edit();
-                    editor.putString("LAST", jsonStr);
-                    editor.commit();
-                }
-                if (isAdded()) {
-                    getActivity().runOnUiThread(new Runnable() {
+		Thread thr = new Thread(new Runnable() {
 
-                        public void run() {
-                            if (jsonStr != null) {
-                                listAdapter.clear();
-                                int cnt = listAdapter.parseJSON(jsonStr);
-                                if (cnt == 20 && getListView().getFooterViewsCount() == 0) {
-                                    getListView().addFooterView(viewLoading, null, false);
-                                }
-                            }
+			public void run() {
+				final String jsonStr;
+				SharedPreferences prefs = getActivity().getSharedPreferences(
+						"CACHE", 0);
+				if ((info == null) || !info.isAvailable()
+						|| !info.isConnected()) {
+					jsonStr = prefs.getString("LAST", "[]");
+				} else {
+					jsonStr = Utils.getJSON(getActivity(), apiurl);
+					Editor editor = prefs.edit();
+					editor.putString("LAST", jsonStr);
+					editor.commit();
+				}
+				if (isAdded()) {
+					getActivity().runOnUiThread(new Runnable() {
 
-                            if (getListView().getHeaderViewsCount() == 0) {
-                                getListView().addHeaderView(mRefreshView, null, false);
-                                //measureView(mRefreshView);
-                                mRefreshViewHeight = mRefreshView.getMeasuredHeight();
-                            }
+						public void run() {
+							if (jsonStr != null) {
+								listAdapter.clear();
+								int cnt = listAdapter.parseJSON(jsonStr);
+								if (cnt == 20
+										&& getListView().getFooterViewsCount() == 0) {
+									getListView().addFooterView(viewLoading,
+											null, false);
+								}
+							}
 
-                            if (getListAdapter() != listAdapter) {
-                                setListAdapter(listAdapter);
-                            }
+							if (getListView().getHeaderViewsCount() == 0) {
+								getListView().addHeaderView(mRefreshView, null,
+										false);
+								// measureView(mRefreshView);
+								mRefreshViewHeight = mRefreshView
+										.getMeasuredHeight();
+							}
 
-                            loading = false;
-                            resetHeader();
-                            getListView().invalidateViews();
-                            setSelection(1);
-                        }
-                    });
-                }
-            }
-        });
-        thr.start();
-    }
+							if (getListAdapter() != listAdapter) {
+								setListAdapter(listAdapter);
+							}
 
-    private void loadMore() {
-        loading = true;
-        page++;
-        final JuickMessage jmsg = (JuickMessage) listAdapter.getItem(listAdapter.getCount() - 1);
+							loading = false;
+							resetHeader();
+							getListView().invalidateViews();
+							setSelection(1);
+						}
+					});
+				}
+			}
+		});
+		thr.start();
+	}
 
-        Thread thr = new Thread(new Runnable() {
+	private void loadMore() {
+		loading = true;
+		page++;
+		final JuickMessage jmsg = (JuickMessage) listAdapter
+				.getItem(listAdapter.getCount() - 1);
 
-            public void run() {
-                final String jsonStr = Utils.getJSON(getActivity(), apiurl + "&before_mid=" + jmsg.MID + "&page=" + page);
-                if (isAdded()) {
-                    getActivity().runOnUiThread(new Runnable() {
+		Thread thr = new Thread(new Runnable() {
 
-                        public void run() {
-                            if (jsonStr == null || listAdapter.parseJSON(jsonStr) != 20) {
-                                MessagesFragment.this.getListView().removeFooterView(viewLoading);
-                            }
-                            loading = false;
-                        }
-                    });
-                }
-            }
-        });
-        thr.start();
-    }
+			public void run() {
+				final String jsonStr = Utils.getJSON(getActivity(), apiurl
+						+ "&before_mid=" + jmsg.MID + "&page=" + page);
+				Log.d("WHYDONTLOAD", "tydysh " + apiurl);
+				if (isAdded()) {
+					getActivity().runOnUiThread(new Runnable() {
 
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        JuickMessage jmsg = (JuickMessage) parent.getItemAtPosition(position);
-        Intent i = new Intent(getActivity(), ThreadActivity.class);
-        i.putExtra("mid", jmsg.MID);
-        startActivity(i);
-    }
+						public void run() {
+							if (jsonStr == null
+									|| listAdapter.parseJSON(jsonStr) < 20) {
+								MessagesFragment.this.getListView()
+										.removeFooterView(viewLoading);
+							}
+							loading = false;
+						}
+					});
+				}
+			}
+		});
+		thr.start();
+	}
 
-    // Refresh
-    public void onClick(View view) {
-        mRefreshState = REFRESHING;
-        prepareForRefresh();
-        init();
-    }
+	public void onItemClick(AdapterView<?> parent, View view, int position,
+			long id) {
+		JuickMessage jmsg = (JuickMessage) parent.getItemAtPosition(position);
+		Intent i = new Intent(getActivity(), ThreadActivity.class);
+		i.putExtra("mid", jmsg.MID);
+		startActivity(i);
+	}
 
-    @Override
-    public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-        if (visibleItemCount < totalItemCount && (firstVisibleItem + visibleItemCount == totalItemCount) && loading == false) {
-            loadMore();
-        }
+	// Refresh
+	public void onClick(View view) {
+		mRefreshState = REFRESHING;
+		prepareForRefresh();
+		init();
+	}
 
-        // When the refresh view is completely visible, change the text to say
-        // "Release to refresh..." and flip the arrow drawable.
-        if (mCurrentScrollState == SCROLL_STATE_TOUCH_SCROLL
-                && mRefreshState != REFRESHING) {
-            if (firstVisibleItem == 0) {
-                mRefreshViewImage.setVisibility(View.VISIBLE);
-                if ((mRefreshView.getBottom() >= mRefreshViewHeight + 20
-                        || mRefreshView.getTop() >= 0)
-                        && mRefreshState != RELEASE_TO_REFRESH) {
-                    mRefreshViewText.setText(R.string.pull_to_refresh_release_label);
-                    mRefreshViewImage.clearAnimation();
-                    mRefreshViewImage.startAnimation(mFlipAnimation);
-                    mRefreshState = RELEASE_TO_REFRESH;
-                } else if (mRefreshView.getBottom() < mRefreshViewHeight + 20
-                        && mRefreshState != PULL_TO_REFRESH) {
-                    mRefreshViewText.setText(R.string.pull_to_refresh_pull_label);
-                    if (mRefreshState != TAP_TO_REFRESH) {
-                        mRefreshViewImage.clearAnimation();
-                        mRefreshViewImage.startAnimation(mReverseFlipAnimation);
-                    }
-                    mRefreshState = PULL_TO_REFRESH;
-                }
-            } else {
-                mRefreshViewImage.setVisibility(View.GONE);
-                resetHeader();
-            }
-        } else if (mCurrentScrollState == SCROLL_STATE_FLING
-                && firstVisibleItem == 0
-                && mRefreshState != REFRESHING) {
-            setSelection(1);
-            mBounceHack = true;
-        } else if (mBounceHack && mCurrentScrollState == SCROLL_STATE_FLING) {
-            setSelection(1);
-        }
-    }
+	// @Override
+	public void onScroll(AbsListView view, int firstVisibleItem,
+			int visibleItemCount, int totalItemCount) {
+		if (visibleItemCount < totalItemCount
+				&& (firstVisibleItem + visibleItemCount == totalItemCount)
+				&& loading == false) {
+			loadMore();
+		}
 
-    public boolean onTouch(View view, MotionEvent event) {
-        final int y = (int) event.getY();
-        mBounceHack = false;
+		// When the refresh view is completely visible, change the text to say
+		// "Release to refresh..." and flip the arrow drawable.
+		if (mCurrentScrollState == SCROLL_STATE_TOUCH_SCROLL
+				&& mRefreshState != REFRESHING) {
+			if (firstVisibleItem == 0) {
+				mRefreshViewImage.setVisibility(View.VISIBLE);
+				if ((mRefreshView.getBottom() >= mRefreshViewHeight + 20 || mRefreshView
+						.getTop() >= 0) && mRefreshState != RELEASE_TO_REFRESH) {
+					mRefreshViewText
+							.setText(R.string.pull_to_refresh_release_label);
+					mRefreshViewImage.clearAnimation();
+					mRefreshViewImage.startAnimation(mFlipAnimation);
+					mRefreshState = RELEASE_TO_REFRESH;
+				} else if (mRefreshView.getBottom() < mRefreshViewHeight + 20
+						&& mRefreshState != PULL_TO_REFRESH) {
+					mRefreshViewText
+							.setText(R.string.pull_to_refresh_pull_label);
+					if (mRefreshState != TAP_TO_REFRESH) {
+						mRefreshViewImage.clearAnimation();
+						mRefreshViewImage.startAnimation(mReverseFlipAnimation);
+					}
+					mRefreshState = PULL_TO_REFRESH;
+				}
+			} else {
+				mRefreshViewImage.setVisibility(View.GONE);
+				resetHeader();
+			}
+		} else if (mCurrentScrollState == SCROLL_STATE_FLING
+				&& firstVisibleItem == 0 && mRefreshState != REFRESHING) {
+			setSelection(1);
+			mBounceHack = true;
+		} else if (mBounceHack && mCurrentScrollState == SCROLL_STATE_FLING) {
+			setSelection(1);
+		}
+	}
 
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_UP:
-                if (!getListView().isVerticalScrollBarEnabled()) {
-                    getListView().setVerticalScrollBarEnabled(true);
-                }
-                if (getListView().getFirstVisiblePosition() == 0 && mRefreshState != REFRESHING) {
-                    if ((mRefreshView.getBottom() >= mRefreshViewHeight
-                            || mRefreshView.getTop() >= 0)
-                            && mRefreshState == RELEASE_TO_REFRESH) {
-                        // Initiate the refresh
-                        onClick(getListView());
-                    } else if (mRefreshView.getBottom() < mRefreshViewHeight
-                            || mRefreshView.getTop() <= 0) {
-                        // Abort refresh and scroll down below the refresh view
-                        resetHeader();
-                        setSelection(1);
-                    }
-                }
-                break;
-            case MotionEvent.ACTION_DOWN:
-                mLastMotionY = y;
-                break;
-            case MotionEvent.ACTION_MOVE:
-                applyHeaderPadding(event);
-                break;
-        }
-        return false;
-    }
+	public boolean onTouch(View view, MotionEvent event) {
+		final int y = (int) event.getY();
+		mBounceHack = false;
 
-    private void applyHeaderPadding(MotionEvent ev) {
-        // getHistorySize has been available since API 1
-        int pointerCount = ev.getHistorySize();
+		switch (event.getAction()) {
+		case MotionEvent.ACTION_UP:
+			if (!getListView().isVerticalScrollBarEnabled()) {
+				getListView().setVerticalScrollBarEnabled(true);
+			}
+			if (getListView().getFirstVisiblePosition() == 0
+					&& mRefreshState != REFRESHING) {
+				if ((mRefreshView.getBottom() >= mRefreshViewHeight || mRefreshView
+						.getTop() >= 0) && mRefreshState == RELEASE_TO_REFRESH) {
+					// Initiate the refresh
+					onClick(getListView());
+				} else if (mRefreshView.getBottom() < mRefreshViewHeight
+						|| mRefreshView.getTop() <= 0) {
+					// Abort refresh and scroll down below the refresh view
+					resetHeader();
+					setSelection(1);
+				}
+			}
+			break;
+		case MotionEvent.ACTION_DOWN:
+			mLastMotionY = y;
+			break;
+		case MotionEvent.ACTION_MOVE:
+			applyHeaderPadding(event);
+			break;
+		}
+		return false;
+	}
 
-        for (int p = 0; p < pointerCount; p++) {
-            if (mRefreshState == RELEASE_TO_REFRESH) {
-                if (getListView().isVerticalFadingEdgeEnabled()) {
-                    getListView().setVerticalScrollBarEnabled(false);
-                }
+	private void applyHeaderPadding(MotionEvent ev) {
+		// getHistorySize has been available since API 1
+		int pointerCount = ev.getHistorySize();
 
-                int historicalY = (int) ev.getHistoricalY(p);
+		for (int p = 0; p < pointerCount; p++) {
+			if (mRefreshState == RELEASE_TO_REFRESH) {
+				if (getListView().isVerticalFadingEdgeEnabled()) {
+					getListView().setVerticalScrollBarEnabled(false);
+				}
 
-                // Calculate the padding to apply, we divide by 1.7 to
-                // simulate a more resistant effect during pull.
-                int topPadding = (int) (((historicalY - mLastMotionY)
-                        - mRefreshViewHeight) / 1.7);
+				int historicalY = (int) ev.getHistoricalY(p);
 
-                mRefreshView.setPadding(
-                        mRefreshView.getPaddingLeft(),
-                        topPadding,
-                        mRefreshView.getPaddingRight(),
-                        mRefreshView.getPaddingBottom());
-            }
-        }
-    }
+				// Calculate the padding to apply, we divide by 1.7 to
+				// simulate a more resistant effect during pull.
+				int topPadding = (int) (((historicalY - mLastMotionY) - mRefreshViewHeight) / 1.7);
 
-    /**
-     * Sets the header padding back to original size.
-     */
-    private void resetHeaderPadding() {
-        mRefreshView.setPadding(
-                mRefreshView.getPaddingLeft(),
-                mRefreshOriginalTopPadding,
-                mRefreshView.getPaddingRight(),
-                mRefreshView.getPaddingBottom());
-    }
+				mRefreshView.setPadding(mRefreshView.getPaddingLeft(),
+						topPadding, mRefreshView.getPaddingRight(),
+						mRefreshView.getPaddingBottom());
+			}
+		}
+	}
 
-    /**
-     * Resets the header to the original state.
-     */
-    private void resetHeader() {
-        if (mRefreshState != TAP_TO_REFRESH) {
-            mRefreshState = TAP_TO_REFRESH;
+	/**
+	 * Sets the header padding back to original size.
+	 */
+	private void resetHeaderPadding() {
+		mRefreshView.setPadding(mRefreshView.getPaddingLeft(),
+				mRefreshOriginalTopPadding, mRefreshView.getPaddingRight(),
+				mRefreshView.getPaddingBottom());
+	}
 
-            resetHeaderPadding();
+	/**
+	 * Resets the header to the original state.
+	 */
+	private void resetHeader() {
+		if (mRefreshState != TAP_TO_REFRESH) {
+			mRefreshState = TAP_TO_REFRESH;
 
-            // Set refresh view text to the pull label
-            mRefreshViewText.setText(R.string.pull_to_refresh_tap_label);
-            // Replace refresh drawable with arrow drawable
-            mRefreshViewImage.setImageResource(R.drawable.ic_pulltorefresh_arrow);
-            // Clear the full rotation animation
-            mRefreshViewImage.clearAnimation();
-            // Hide progress bar and arrow.
-            mRefreshViewImage.setVisibility(View.GONE);
-            mRefreshViewProgress.setVisibility(View.GONE);
-        }
-    }
-    /*
-    private void measureView(View child) {
-    ViewGroup.LayoutParams p = child.getLayoutParams();
-    if (p == null) {
-    p = new ViewGroup.LayoutParams(
-    ViewGroup.LayoutParams.FILL_PARENT,
-    ViewGroup.LayoutParams.WRAP_CONTENT);
-    }
-    
-    int childWidthSpec = ViewGroup.getChildMeasureSpec(0,
-    0 + 0, p.width);
-    int lpHeight = p.height;
-    int childHeightSpec;
-    if (lpHeight > 0) {
-    childHeightSpec = MeasureSpec.makeMeasureSpec(lpHeight, MeasureSpec.EXACTLY);
-    } else {
-    childHeightSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
-    }
-    child.measure(childWidthSpec, childHeightSpec);
-    }
-     */
+			resetHeaderPadding();
 
-    public void onScrollStateChanged(AbsListView view, int scrollState) {
-        mCurrentScrollState = scrollState;
+			// Set refresh view text to the pull label
+			mRefreshViewText.setText(R.string.pull_to_refresh_tap_label);
+			// Replace refresh drawable with arrow drawable
+			mRefreshViewImage
+					.setImageResource(R.drawable.ic_pulltorefresh_arrow);
+			// Clear the full rotation animation
+			mRefreshViewImage.clearAnimation();
+			// Hide progress bar and arrow.
+			mRefreshViewImage.setVisibility(View.GONE);
+			mRefreshViewProgress.setVisibility(View.GONE);
+		}
+	}
 
-        if (mCurrentScrollState == SCROLL_STATE_IDLE) {
-            mBounceHack = false;
-        }
-    }
+	/*
+	 * private void measureView(View child) { ViewGroup.LayoutParams p =
+	 * child.getLayoutParams(); if (p == null) { p = new ViewGroup.LayoutParams(
+	 * ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+	 * }
+	 * 
+	 * int childWidthSpec = ViewGroup.getChildMeasureSpec(0, 0 + 0, p.width);
+	 * int lpHeight = p.height; int childHeightSpec; if (lpHeight > 0) {
+	 * childHeightSpec = MeasureSpec.makeMeasureSpec(lpHeight,
+	 * MeasureSpec.EXACTLY); } else { childHeightSpec =
+	 * MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED); }
+	 * child.measure(childWidthSpec, childHeightSpec); }
+	 */
 
-    public void prepareForRefresh() {
-        resetHeaderPadding();
+	public void onScrollStateChanged(AbsListView view, int scrollState) {
+		mCurrentScrollState = scrollState;
 
-        mRefreshViewImage.setVisibility(View.GONE);
-        // We need this hack, otherwise it will keep the previous drawable.
-        mRefreshViewImage.setImageDrawable(null);
-        mRefreshViewProgress.setVisibility(View.VISIBLE);
+		if (mCurrentScrollState == SCROLL_STATE_IDLE) {
+			mBounceHack = false;
+		}
+	}
 
-        // Set refresh view text to the refreshing label
-        mRefreshViewText.setText(R.string.pull_to_refresh_refreshing_label);
+	public void prepareForRefresh() {
+		resetHeaderPadding();
 
-        mRefreshState = REFRESHING;
-    }
+		mRefreshViewImage.setVisibility(View.GONE);
+		// We need this hack, otherwise it will keep the previous drawable.
+		mRefreshViewImage.setImageDrawable(null);
+		mRefreshViewProgress.setVisibility(View.VISIBLE);
+
+		// Set refresh view text to the refreshing label
+		mRefreshViewText.setText(R.string.pull_to_refresh_refreshing_label);
+
+		mRefreshState = REFRESHING;
+	}
 }

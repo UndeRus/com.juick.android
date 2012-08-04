@@ -519,7 +519,7 @@ public class NewMessageActivity extends Activity implements OnClickListener, Dia
             this.context = context;
         }
 
-        @Override
+        //@Override
         public View getView(int position, View convertView, ViewGroup parent) {
             TextView tv = (TextView) convertView;
             if (tv == null) {
